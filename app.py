@@ -22,7 +22,7 @@ def predict_pneumonia(image_file):
     return int(pred), float(prob)
 
 # Environment variable for deployment (put your key in Render/GitHub config)
-GEMINI_API_KEY = os.environ.get('AIzaSyAd53uYjb_0gQOTH7c2_8k4EDThT1qQ-9I', 'YOUR_FALLBACK_API_KEY')
+GEMINI_API_KEY = os.environ.get('AIzaSyCChIG6PY2gAIBifl0j2_dISSt4oF5HRkc', 'YOUR_FALLBACK_API_KEY')
 
 def get_gemini_advice(diagnosis, confidence):
     prompt = (
@@ -91,3 +91,4 @@ def get_advice():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Render will set PORT; fallback for local dev.
     app.run(debug=False, host="0.0.0.0", port=port)
+
