@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AI Pneumonia & TB Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            margin:0;
+            font-family: 'Montserrat', Arial, sans-serif;
+            background: linear-gradient(120deg, #e0ecff 0%, #f6fbff 100%);
+            min-height: 100vh;
+        }
+        .navbar {
+            background: #fff;
+            box-shadow: 0 4px 20px #1567d13a;
+            padding: 18px 0 13px 22px;
+            font-size: 1.45em;
+            color: #1766e2;
+            letter-spacing: 1px;
+            font-weight: 700;
+            border-bottom-left-radius: 18px;
+            border-bottom-right-radius: 18px;
+            z-index:2;
+            position: relative;
+        }
+        .hero-illustration {
+            position: absolute;
+            top: 27px;
+            right: 20px;
+            opacity: 0.17;
+            z-index:0;
+            max-width:120px;
+            pointer-events:none;
+        }
+        .container {
+            max-width: 420px;
+            margin: 24px auto 0 auto;
+            background: #fff;
+            border-radius: 1.5em;
+            box-shadow: 0 8px 32px #195acf29;
+            padding: 24px 14px 14px 14px;
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            color:#1766e2;
+            letter-spacing:0.5px;
+            font-size:2em;
+            margin: 0;
+        }
+        .subtitle {
+            color:#1972b9;
+            font-size:1.06em;
+            margin-bottom:18px;
+            margin-top:.7em;
+            font-weight: 500;
+        }
+        .form-section {
+            margin-bottom:18px;
+        }
+        .file-input {
+            background:#e6f0f9;
+            border:none;
+            border-radius:11px;
+            padding:10px 12px;
+            width: 100%;
+            margin-bottom:13px;
+            outline: none;
+            font-size: .99em;
+        }
+        .file-input:focus {
+            box-shadow: 0 0 6px #6ec8ff8c;
+        }
+        button, .button {
+            background: linear-gradient(90deg, #318cfe 70%, #6ac7fe 100%);
+            color:#fff;
+            padding:9px 0;
+            border:none;
+            border-radius:10px;
+            font-weight:bold;
+            font-size:1em;
+            width:100%;
+            cursor:pointer;
+            transition:.18s;
+            margin: 7px 0;
+            letter-spacing: .22px;
+        }
+        button:hover, .button:hover {
+            background: linear-gradient(90deg,#1f6bbd 60%, #4895e6 120%);
+        }
+        .actions-bar {display: flex; gap:12px; margin-bottom: 3px;}
+        .actions-bar button, .actions-bar .button {width: 48%; font-size:.96em; padding:8px 0;}
+        #download-pdf {display:none;}
+        #show-history { width:36px; font-size:1.1em; background:#e1eafb;color:#1766e2; border-radius:8px;}
+        #show-history:hover {background:#ceeafb;}
+        .result, .advice {
+            box-shadow: 0 4px 18px #a0c7f533;
+            font-size:1em;
+            margin-top: 16px;
+            border-radius: 12px;
+            padding: 18px 14px 14px 14px;
+            animation: slideIn 0.4s;
+            margin-bottom: 9px;
+        }
+        .result.positive { background: #fff7f4; border-left: 5px solid #faaeab;}
+        .result.negative { background: #e9fbe6; border-left: 5px solid #7fe6a9; }
+        .advice { background: #ebf8fc;}
+        .ai-row { display:flex; align-items: flex-start; gap:10px; }
+        .icon {
+            width:33px; height:33px; border-radius:50%; background:#ebf6ff; display:flex; justify-content:center; align-items:center;
+            margin-right: 9px; min-width:33px;
+        }
+        .icon svg {width:21px; height:21px;}
+        @media (max-width:900px) { .hero-illustration { display:none; } }
+        @media (max-width:480px){
+            .container {max-width:98vw; padding:7vw;}
+            .navbar {font-size:1.09em;}
+        }
+        @keyframes slideIn { from { transform: translateY(30px); opacity:0; } to { transform: none; opacity:1; } }
+        .spinner {display:flex; justify-content:center; align-items:center;height:36px;width:100%;}
+        .spinner:after {
+            content: " "; display: block; width: 24px; height: 24px; border-radius: 50%;
+            border: 4px solid #3fa3fc; border-color: #3fa3fc transparent #79c0ff transparent;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        #history-drawer {
+            position: fixed; top:0; right:-350px; width:330px; height:100vh; background:#fff; z-index:1000;
+            box-shadow:-4px 0 24px #c6eaff37; transition:right .4s; padding:28px 18px 18px 18px;
+            max-width:95vw;
+            overflow-y:auto;
+        }
+        #history-drawer.open { right:0; }
+        #history-drawer h2 {margin-top:0;}
+        .history-item {margin-bottom:11px; border-bottom:1px solid #ebf4f4; padding-bottom:8px;font-size:.97em;}
+        .history-piece {margin-bottom:5px;}
+        .close-drawer {position:absolute;top:9px;right:12px;background:#f3f3fc;width:26px;height:26px;border:none;border-radius:50%;cursor:pointer;
+            font-size:1em;}
+        #onboard-modal {
+            display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(18,38,78,0.14); z-index:2000;
+            justify-content: center; align-items: center;
+        }
+        #onboard-modal .modal-card {
+            background: #fff; border-radius:20px; box-shadow: 0 6px 22px #132b5b19; max-width:330px;
+            padding:23px 17px 20px 17px; text-align:center; animation: slideIn .3s;}
+        #onboard-modal .modal-card h2{margin:0 0 12px 0;font-size:1.38em;}
+        #onboard-modal .modal-card button{background:#167be1;padding:7px 20px; border-radius:8px; font-size:1em;margin-top:11px;}
+        @media print {
+          body * { visibility:hidden; }
+          #pdf-export, #pdf-export * { visibility:visible; }
+        }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <span>🌐 MedAI</span>
+    <span style="color:#1972b9;font-size:0.7em;"> | Pneumonia & TB X-ray</span>
+    <button id="show-history" title="Recent X-rays" style="float:right;margin-right:12px;">🕑</button>
+</div>
+<div class="hero-illustration">
+    <svg width="90" height="90" viewBox="0 0 80 80" fill="none"><ellipse cx="24" cy="43" rx="18" ry="25" fill="#e7f2fa" /><ellipse cx="56" cy="43" rx="18" ry="25" fill="#e7faf2" /><rect x="36" y="30" width="8" height="30" rx="4" fill="#cae5fa"/><rect x="34" y="60" width="12" height="8" rx="4" fill="#d4faea"/></svg>
+</div>
+<div class="container">
+    <h1>AI Pneumonia & TB Detection</h1>
+    <div class="subtitle">
+        Upload your chest X-ray to get instant, intelligent results and <span style="color:#1766e2">personalized health advice</span>
+    </div>
+    <form id="upload-form" class="form-section" enctype="multipart/form-data">
+        <input class="file-input" type="file" name="xray" accept="image/*" required />
+        <button type="submit">🔍 Analyze X-ray</button>
+    </form>
+    <div id="loading-spinner" class="spinner" style="display:none"></div>
+    <div id="diagnosis-result" class="result" style="display:none"></div>
+    <div id="advice-panel" class="advice" style="display:none"></div>
+    <div class="actions-bar">
+        <button id="download-pdf" style="display:none">Download as PDF</button>
+    </div>
+</div>
+<div id="pdf-export" style="display:none;padding:32px;font-size:1.13em;font-family:Montserrat,Arial,sans-serif;">
+    <h2 style="color:#1566ad;">Pneumonia & TB X-ray AI Report</h2>
+    <div id="pdf-diagnosis" style="margin-bottom:14px;"></div>
+    <div id="pdf-advice"></div>
+    <div style="font-size:.98em;margin-top:18px;color:#444;"><em>This output is generated by an AI assistant. Please consult a qualified doctor before making health decisions.</em></div>
+</div>
+<div id="history-drawer">
+    <button class="close-drawer" onclick="hideHistoryDrawer()" title="Close">×</button>
+    <h2>Recent X-ray Results</h2>
+    <div id="history-list"></div>
+</div>
+<div id="onboard-modal">
+    <div class="modal-card">
+        <h2>Welcome to MedAI!</h2>
+        <p>This free tool uses AI to help you analyze chest X-rays for pneumonia/TB, and gives you friendly, medically-informed advice.</p>
+        <ul style="text-align:left;">
+            <li>1. Upload your X-ray image.</li>
+            <li>2. Get instant prediction/results on screen.</li>
+            <li>3. Get step-by-step health suggestions from an AI assistant.</li>
+            <li style="color:#307fe6">Results are not a substitute for real medical care. Always consult a doctor.</li>
+        </ul>
+        <button onclick="hideOnboard()">Get Started</button>
+    </div>
+</div>
+<script>
+window.onload = function(){
+    document.getElementById("onboard-modal").style.display = "flex";
+    loadHistory();
+};
+function hideOnboard(){ document.getElementById("onboard-modal").style.display="none"; }
+function showLoader() {
+    document.getElementById("loading-spinner").style.display = "block";
+    document.getElementById("diagnosis-result").style.display = "none";
+    document.getElementById("advice-panel").style.display = "none";
+    document.getElementById("download-pdf").style.display = "none";
+}
+function hideLoader() { document.getElementById("loading-spinner").style.display = "none"; }
+document.getElementById("show-history").onclick = function() {
+    document.getElementById("history-drawer").classList.add("open");
+    loadHistory();
+};
+function hideHistoryDrawer(){
+    document.getElementById("history-drawer").classList.remove("open");
+}
+function loadHistory(){
+    let history = JSON.parse(localStorage.getItem("xray_history")||"[]");
+    let histList = document.getElementById("history-list");
+    if(!history.length){ histList.innerHTML='<div>No previous results yet.</div>'; return;}
+    histList.innerHTML = '';
+    history.reverse().forEach(item=>{
+        let card = document.createElement("div");
+        card.className = "history-item";
+        card.innerHTML = `<div class="history-piece"><b>Date:</b> ${new Date(item.timestamp).toLocaleString()}</div>
+        <div class="history-piece"><b>Diagnosis:</b> ${item.diagnosis}</div>
+        <div class="history-piece"><b>Confidence:</b> ${(item.confidence*100).toFixed(2)}%</div>
+        <div class="history-piece"><b>Advice:</b><br>${item.advice}</div>`;
+        histList.appendChild(card);
+    });
+}
+function saveResult(diagnosis, confidence, advice){
+    let hist = JSON.parse(localStorage.getItem("xray_history")||"[]");
+    hist.push({
+        diagnosis, confidence, advice,
+        timestamp: Date.now()
+    });
+    localStorage.setItem("xray_history", JSON.stringify(hist.slice(-10)));
+}
+document.getElementById("upload-form").onsubmit = async function(e) {
+    e.preventDefault();
+    showLoader();
+    let formData = new FormData(this);
+    let resDiv = document.getElementById("diagnosis-result");
+    let advDiv = document.getElementById("advice-panel");
+    resDiv.style.display = "none";
+    advDiv.style.display = "none";
+    document.getElementById("download-pdf").style.display = "none";
+    const response = await fetch("/upload", { method: "POST", body: formData });
+    const data = await response.json();
+    hideLoader();
+    let labelText, iconSVG, cardClass;
+    if(data.diagnosis === "Tuberculosis") {
+        labelText = "<b>Possible Tuberculosis Detected</b>";
+        iconSVG = `<svg fill="#c0832d" viewBox="0 0 48 48"><ellipse cx="24" cy="24" rx="20" ry="20"/>
+            <text x="24" y="31" text-anchor="middle" fill="#fff" font-size="18" font-family="Arial">TB</text></svg>`;
+        cardClass = "result positive";
+    } else if(data.diagnosis === "Pneumonia") {
+        labelText = "<b>Possible Pneumonia Detected</b>";
+        iconSVG = `<svg fill="#e66d47" viewBox="0 0 48 48"><path d="M24 4L19.7 17H6l14 9.8L12 44l12-8.6L36 44l-8-17.2L42 17H28.3L24 4z"/></svg>`;
+        cardClass = "result positive";
+    } else if(data.diagnosis === "Normal") {
+        labelText = "<b>No Disease Detected</b>";
+        iconSVG = `<svg fill="#2dc05e" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/>
+            <text x="24" y="31" text-anchor="middle" fill="#fff" font-size="18" font-family="Arial">OK</text></svg>`;
+        cardClass = "result negative";
+    } else {
+        labelText = "<b>Unknown Result</b>";
+        iconSVG = `<svg fill="#8b8b8b" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/>
+            <text x="24" y="31" text-anchor="middle" fill="#fff" font-size="18" font-family="Arial">?</text></svg>`;
+        cardClass = "result";
+    }
+    resDiv.className = cardClass;
+    resDiv.innerHTML = `<div class="ai-row"><span class="icon" style="background:#eaf4ff">${iconSVG}</span> ${labelText}</div>
+         Confidence: ${(data.confidence*100).toFixed(2)}%
+         <div style="font-size:.96em;margin-top:6px;"><b>Class Probabilities:</b>
+         <ul style="margin-top:3px;">${
+             Object.entries(data.all_confidences || {})
+                    .map(([k,v])=>`<li>${k}: ${(v*100).toFixed(2)}%</li>`).join("")
+          }</ul></div>`;
+    resDiv.style.display = "block";
+    advDiv.innerHTML = "Getting expert advice...";
+    advDiv.style.display = "block";
+    const adviceRes = await fetch("/get-advice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ diagnosis: data.diagnosis, confidence: data.confidence })
+    });
+    const advResp = await adviceRes.json();
+    advDiv.innerHTML = `<div class="ai-row"><span class="icon" style="background:#eaf6ff"><svg fill="#2b7aec" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="20"/><text x="24" y="32" text-anchor="middle" fill="#fff" font-size="18" font-family="Arial" dy=".3em">AI</text>
+        </svg></span>
+        <div><b>AI Health Assistant:</b><br>${advResp.advice}</div></div>`;
+    document.getElementById("download-pdf").style.display = "inline-block";
+    saveResult(data.diagnosis, data.confidence, advResp.advice);
+};
+document.getElementById("download-pdf").onclick = function() {
+    let diagnosisText = document.getElementById("diagnosis-result").innerText;
+    let adviceText = document.getElementById("advice-panel").innerText;
+    document.getElementById("pdf-diagnosis").innerHTML = `<b>Diagnosis:</b><br>${diagnosisText}`;
+    document.getElementById("pdf-advice").innerHTML = `<b>Advice:</b><br>${adviceText}`;
+    let opt = {
+        margin: 0.7,
+        filename: "Pneumonia_TB_AI_Report.pdf",
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    document.getElementById("pdf-export").style.display = "block";
+    html2pdf().set(opt).from(document.getElementById("pdf-export")).save().then(()=>{
+      document.getElementById("pdf-export").style.display = "none";
+    });
+};
+</script>
+</body>
+</html>
